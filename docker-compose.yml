@@ -1,7 +1,7 @@
 services:
-  db:
+  metabase-db:
     image: mariadb
-    container_name: '${PROJECT_NAME}_db'
+    container_name: '${PROJECT_NAME}-db'
     restart: always
     expose:
       - 3306  
@@ -15,33 +15,33 @@ services:
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD=${DB_PASSWORD}
   
-  pma:
+  metabase-pma:
     image: phpmyadmin/phpmyadmin
-    container_name: '${PROJECT_NAME}_pma'
+    container_name: '${PROJECT_NAME}-pma'
     restart: always
     ports:
-      - 4380:80
+      - 4301:80
     depends_on:
-      - db
+      - metabase-db
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=db
       - PMA_USER=root
       - PMA_PASSWORD=${DB_ROOT_PASSWORD}
 
-  metabase:
+  metabase-app:
     image: metabase/metabase:latest
-    container_name: '${PROJECT_NAME}_app'
+    container_name: '${PROJECT_NAME}-app'
     restart: always
     environment:
       MB_DB_TYPE: "${DB_DRIVER}"
       MB_DB_DBNAME: "${DB_NAME}"
-      MB_DB_PORT: "5432"
+      MB_DB_PORT: "${DB_PORT}"
       MB_DB_USER: "${DB_USER}"
       MB_DB_PASS: "${DB_PASSWORD}"
-      MB_DB_HOST: "db"
-      MB_PASSWORD_COMPLEXITY: strong
-      MB_PASSWORD_LENGTH: 10
+      MB_DB_HOST: "metabase-db"
+      #MB_PASSWORD_COMPLEXITY: strong
+      #MB_PASSWORD_LENGTH: 10
       JAVA_TIMEZONE: "${MB_JAVA_TIMEZONE}"
     ports:
       - 127.0.0.1:${MB_PORT}:3000
@@ -51,7 +51,7 @@ services:
       default:
         ipv4_address: 172.17.10.10
     depends_on:
-      - db
+      - metabase-db
 
 
 networks:
