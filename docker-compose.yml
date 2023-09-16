@@ -1,20 +1,40 @@
 services:
   db:
-    image: postgres:13.1-alpine
+    image: mariadb
+    container_name: '${PROJECT_NAME}_db'
     restart: always
+    expose:
+      - 3306  
+    ports:
+      - 3306:3306    
     volumes:
-      - db-data:${DB_DATA_DIR}
+      - metabase-data:${DB_DATA_DIR}
     environment:
-      - PGDATA=${DB_DATA_DIR}
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+  
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: '${PROJECT_NAME}_pma'
+    restart: always
+    ports:
+      - 4380:80
+    depends_on:
+      - db
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db
+      - PMA_USER=root
+      - PMA_PASSWORD=${DB_ROOT_PASSWORD}
 
   metabase:
     image: metabase/metabase:latest
+    container_name: '${PROJECT_NAME}_app'
     restart: always
     environment:
-      MB_DB_TYPE: "postgres"
+      MB_DB_TYPE: "${DB_DRIVER}"
       MB_DB_DBNAME: "${DB_NAME}"
       MB_DB_PORT: "5432"
       MB_DB_USER: "${DB_USER}"
@@ -33,6 +53,7 @@ services:
     depends_on:
       - db
 
+
 networks:
   default:
     ipam:
@@ -41,4 +62,4 @@ networks:
         - subnet: "172.17.10.0/24"
 
 volumes:
-  db-data:
+  metabase-data:
