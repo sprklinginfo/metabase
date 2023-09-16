@@ -3,10 +3,8 @@ services:
     image: mariadb
     container_name: '${PROJECT_NAME}-db'
     restart: always
-    expose:
-      - 3306  
     ports:
-      - 3306:3306    
+      - ${DB_PORT}:3306    
     volumes:
       - metabase-data:${DB_DATA_DIR}
     environment:
@@ -14,6 +12,9 @@ services:
       - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_TCP_PORT=${DB_PORT}
+      - MARIADB_AUTO_UPGRADE=1
+      - MYSQL_UNIX_PORT=${DB_PORT}
   
   metabase-pma:
     image: phpmyadmin/phpmyadmin
@@ -25,6 +26,7 @@ services:
       - metabase-db
     environment:
       - PMA_ARBITRARY=1
+      - PMA_PORT=${DB_PORT}
       - PMA_HOST=metabase-db
       - PMA_USER=root
       - PMA_PASSWORD=${DB_ROOT_PASSWORD}
