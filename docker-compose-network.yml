@@ -64,7 +64,7 @@ services:
 # proxy_manager_default network should be created by 'docker network' in advance
 networks:
   proxy_manager_default:
-    external:true
+    external: true
 
 volumes:
   metabase-data:
