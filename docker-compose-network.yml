@@ -1,0 +1,70 @@
+services:
+  metabase-db:
+    image: mariadb
+    container_name: '${PROJECT_NAME}-db'
+    restart: always
+    ports:
+      - ${DB_PORT}:3306    
+    volumes:
+      - metabase-data:${DB_DATA_DIR}
+    networks:
+      - proxy_manager_default  
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_TCP_PORT=${DB_PORT}
+      - MARIADB_AUTO_UPGRADE=1
+      - MYSQL_UNIX_PORT=${DB_PORT}
+  
+  metabase-pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: '${PROJECT_NAME}-pma'
+    restart: always
+    ports:
+      - 8181:80
+    depends_on:
+      - metabase-db
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_PORT=${DB_PORT}
+      - PMA_HOST=metabase-db
+      # disable user/password so login page will show
+      #- PMA_USER=root
+      #- PMA_PASSWORD=${DB_ROOT_PASSWORD}
+      # uncomment PMA_ABSOLUTE_URI if pma runs in sub-directory
+      #- PMA_ABSOLUTE_URI="${PROJECT_URL}/pma/"
+
+  metabase-app:
+    image: metabase/metabase:latest
+    container_name: '${PROJECT_NAME}-app'
+    restart: always
+    networks:
+      - proxy_manager_default
+    environment:
+      MB_DB_TYPE: "${DB_DRIVER}"
+      MB_DB_DBNAME: "${DB_NAME}"
+      MB_DB_PORT: "${DB_PORT}"
+      MB_DB_USER: "${DB_USER}"
+      MB_DB_PASS: "${DB_PASSWORD}"
+      MB_DB_HOST: "metabase-db"
+      #MB_PASSWORD_COMPLEXITY: strong
+      #MB_PASSWORD_LENGTH: 10
+      JAVA_TIMEZONE: "${MB_JAVA_TIMEZONE}"
+    ports:
+      - 127.0.0.1:${MB_PORT}:3000
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - proxy_manager_default
+    depends_on:
+      - metabase-db
+
+# proxy_manager_default network should be created by 'docker network' in advance
+networks:
+  proxy_manager_default:
+    external:true
+
+volumes:
+  metabase-data:
